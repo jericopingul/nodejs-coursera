@@ -33,6 +33,39 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+function auth(req, res, next) {
+  console.log(req.headers);
+
+  let authHeader = req.headers.authorization;
+
+  if(!authHeader) {
+    const err = new Error('You are not authenticated!');
+
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status = 401;
+    return next(err);
+  }
+
+  // auth should be array of 2 items - username and password
+  const auth = new Buffer(authHeader.split(' ')[1], 'base64').toString().split(':');
+
+  const username = auth[0];
+  const password = auth[1];
+
+  if(username === 'admin' && password === 'password') {
+    next(); // pass request to next middleware
+  } else {
+    const err = new Error('You are not authenticated!');
+
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status = 401;
+    return next(err);
+  }
+}
+
+app.use(auth); // before client can access static/dynamic resources - need to be authorized first
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
