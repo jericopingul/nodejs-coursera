@@ -5,6 +5,9 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -44,48 +47,20 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 function auth(req, res, next) {
 
-  // console.log(req.signedCookies);
-  console.log(req.session);
-
-  if(!req.session.user) {
-    // console.log(req.headers);
-
-    let authHeader = req.headers.authorization;
-  
-    if(!authHeader) {
-      const err = new Error('You are not authenticated!');
-  
-      res.setHeader('WWW-Authenticate', 'Basic');
-      err.status = 401;
-      return next(err);
-    }
-  
-    // auth should be array of 2 items - username and password
-    const auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-  
-    const username = auth[0];
-    const password = auth[1];
-  
-    if(username === 'admin' && password === 'password') {
-      req.session.user = 'admin';
-      next(); // pass request to next middleware
-    } else {
-      const err = new Error('You are not authenticated!');
-  
-      res.setHeader('WWW-Authenticate', 'Basic');
-      err.status = 401;
-      return next(err);
-    }
+  if(!req.user) {
+    const err = new Error('You are not authenticated!');
+    err.status = 403;
+    return next(err);
   } else {
-    if(req.session.user === 'admin') {
-      next();
-    } else {
-      const err = new Error('You are not authenticated!');
-      err.status = 401;
-      return next(err);
-    }
+    next();
   }
 }
 
@@ -93,8 +68,7 @@ app.use(auth); // before client can access static/dynamic resources - need to be
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
