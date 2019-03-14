@@ -16,7 +16,7 @@ dishRouter.route('/')
       .then(dishes => {
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
-          res.json(dishes);
+          res.json(dishes); 
         }, err => next(err))
       .catch(err => next(err)); // send to overall error handler
   })
