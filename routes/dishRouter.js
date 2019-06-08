@@ -13,7 +13,7 @@ dishRouter.use(bodyParser.json())
 dishRouter.route('/')
   .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
   .get(cors.cors, (req, res, next) => {
-    Dishes.find({})
+    Dishes.find(req.query) // { featured: true }
       .populate('comments.author')
       .then(dishes => {
           res.statusCode = 200;
@@ -102,8 +102,10 @@ dishRouter.route('/:dishId')
       .catch(err => next(err)); // send to overall error handler
   })
   .post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    console.log(req.user);
     Dishes.findById(req.params.dishId)
       .then(dish => {
+        console.log(req.user);
         if(dish != null) {
           req.body.author = req.user._id;
           dish.comments.push(req.body);
